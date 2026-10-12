@@ -1,6 +1,6 @@
 // 1) Crie um projeto em supabase.com. Cole a Project URL e a chave anon/public abaixo.
-const SUPABASE_URL = "COLE_A_URL_DO_PROJETO";
-const SUPABASE_ANON_KEY = "COLE_A_CHAVE_ANON_PUBLICA";
+const SUPABASE_URL = "https://omeohylvbrtoesbvgnhd.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_rJDKBLuZD84H9XNMtfLqmw_J6KJToNT";
 const BUCKET = "cloud-photos";
 let db, user, profile, activeGroup = null;
 const $ = s => document.querySelector(s);
