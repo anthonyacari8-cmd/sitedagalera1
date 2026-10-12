@@ -1,0 +1,16 @@
+CLOUD SPACE — INSTALAÇÃO
+1. Crie um projeto em https://supabase.com.
+2. No SQL Editor, execute todo o arquivo supabase.sql.
+3. Vá a Storage > New bucket, nomeie como cloud-photos e deixe PRIVATE.
+4. Em Project Settings > API, copie Project URL e anon/public key.
+5. Abra script.js e substitua as duas constantes no início:
+   SUPABASE_URL = "COLE_A_URL_DO_PROJETO"
+   SUPABASE_ANON_KEY = "COLE_A_CHAVE_ANON_PUBLICA"
+   Nunca use service_role/secret key no navegador.
+6. Em Authentication > URL Configuration, configure o endereço HTTPS do GitHub Pages em Site URL e Redirect URLs.
+7. Publique index.html, style.css e script.js no repositório GitHub Pages. O supabase.sql é executado no painel, não no site.
+8. Crie duas contas com e-mails diferentes. Confirme o e-mail se solicitado. Copie o ID em Meu perfil; use o ID na seção Amigos e aceite o pedido na outra conta.
+9. Crie um grupo e selecione os amigos para compartilhar fotos.
+10. Para realtime, habilite as tabelas friend_requests, friendships, groups, group_members e photos na publicação supabase_realtime.
+
+Observações: este é um ponto de partida funcional; antes de uso público amplo, revise as políticas de segurança. O bucket deve permanecer privado. Somente HTML/CSS/JS no frontend; o Supabase fornece autenticação, banco e armazenamento.
