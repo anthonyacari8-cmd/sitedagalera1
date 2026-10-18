@@ -25,7 +25,7 @@ async function upload(files,groupId=null){const list=[...files].filter(f=>f.type
 async function loadPhotos(){const {data,error}=await db.from("photos").select("*").eq("owner_id",user.id).is("group_id",null).order("created_at",{ascending:false});if(error)return toast(err(error),true);await gallery($("#myPhotos"),data||[]);$("#emptyPhotos").classList.toggle("hidden",!!data?.length)}
 async function idsFriends(){const {data,error}=await db.from("friendships").select("user_a,user_b").or(`user_a.eq.${user.id},user_b.eq.${user.id}`);if(error)throw error;return(data||[]).map(x=>x.user_a===user.id?x.user_b:x.user_a)}
 async function profiles(ids){if(!ids.length)return[];const {data,error}=await db.from("profiles").select("id,display_name,friend_code").in("id",ids);if(error)throw error;return data||[]}
-function personRow(p,extra=""){return `<div class="person"><div class="avatar">${esc(initials(p.display_name))}</div><div class="person-info"><strong>${esc(p.display_name)}</strong><small>${esc(p.friend_code||"")}</small></div>${extra}</div>`}
+function channelpersonRow(p,extra=""){return `<div class="person"><div class="avatar">${esc(initials(p.display_name))}</div><div class="person-info"><strong>${esc(p.display_name)}</strong><small>${esc(p.friend_code||"")}</small></div>${extra}</div>`}
 async function loadFriends(){try{const [ids,req]=await Promise.all([idsFriends(),db.from("friend_requests").select("*").eq("to_user",user.id).eq("status","pending").order("created_at",{ascending:false})]);if(req.error)throw req.error;const [ps,senders]=await Promise.all([profiles(ids),profiles((req.data||[]).map(r=>r.from_user))]);$("#friendsList").innerHTML=ps.length?ps.map(p=>personRow(p)).join(""):'<p class="empty">Você ainda não adicionou amigos.</p>';$("#requests").innerHTML=(req.data||[]).map(r=>{const p=senders.find(x=>x.id===r.from_user)||{display_name:"Usuário",friend_code:""};return personRow(p,`<button class="primary" data-accept="${r.id}">Aceitar</button><button class="secondary" data-reject="${r.id}">Recusar</button>`)}).join("")||'<p class="empty">Nenhum pedido pendente.</p>'}catch(e){toast(err(e),true)}}
 async function sendRequest(e){e.preventDefault();const code=$("#friendId").value.trim().toUpperCase();if(code===profile.friend_code)return toast("Esse é seu próprio ID.",true);try{const {data:t,error}=await db.from("profiles").select("id,display_name").eq("friend_code",code).maybeSingle();if(error)throw error;if(!t)return toast("ID não encontrado.",true);const [a,b]=[user.id,t.id].sort();let r=await db.from("friendships").select("id").eq("user_a",a).eq("user_b",b).maybeSingle();if(r.error)throw r.error;if(r.data)return toast("Vocês já são amigos.",true);r=await db.from("friend_requests").select("id").eq("from_user",user.id).eq("to_user",t.id).eq("status","pending").maybeSingle();if(r.error)throw r.error;if(r.data)return toast("Pedido já enviado.",true);const {error:ins}=await db.from("friend_requests").insert({from_user:user.id,to_user:t.id});if(ins)throw ins;$("#friendId").value="";toast("Pedido enviado!")}catch(e){toast(err(e),true)}}
 async function requestAction(id,accept){try{const {data:r,error}=await db.from("friend_requests").select("*").eq("id",id).eq("to_user",user.id).eq("status","pending").single();if(error)throw error;if(accept){const [a,b]=[r.from_user,user.id].sort();const {error:fe}=await db.from("friendships").insert({user_a:a,user_b:b});if(fe&&!/duplicate|unique/i.test(fe.message))throw fe}const {error:ue}=await db.from("friend_requests").update({status:accept?"accepted":"rejected"}).eq("id",id);if(ue)throw ue;toast(accept?"Amizade adicionada!":"Pedido recusado.");await loadFriends();await dashboard()}catch(e){toast(err(e),true)}}
@@ -33,6 +33,42 @@ async function loadGroups(){try{const {data:m,error}=await db.from("group_member
 async function showGroup(g){const {data:mem,error:me}=await db.from("group_members").select("user_id").eq("group_id",g.id);if(me)throw me;const ps=await profiles((mem||[]).map(x=>x.user_id));const {data:photos,error}=await db.from("photos").select("*").eq("group_id",g.id).order("created_at",{ascending:false});if(error)throw error;$("#groupDetail").innerHTML=`<h3>${esc(g.name)}</h3><p class="muted">${ps.length} membro(s): ${ps.map(p=>esc(p.display_name)).join(", ")}</p><label class="primary upload">＋ Enviar fotos<input id="groupInput" type="file" accept="image/*" multiple hidden></label><div id="groupGallery" class="gallery" style="margin-top:15px"></div>${photos.length?"":'<p class="empty">Nenhuma foto no grupo ainda.</p>'}`;await gallery($("#groupGallery"),photos);$("#groupInput").onchange=e=>upload(e.target.files,g.id)}
 async function newGroup(){try{const ids=await idsFriends(),ps=await profiles(ids);$("#friendChoices").innerHTML=ps.map(p=>`<label><input type="checkbox" name="chosen" value="${p.id}" style="width:auto"> ${esc(p.display_name)} (${esc(p.friend_code)})</label>`).join("")||'<p class="muted">Sem amigos ainda. Você pode criar o grupo só para você.</p>';$("#groupDialog").showModal()}catch(e){toast(err(e),true)}}
 async function createGroup(e){e.preventDefault();try{const {data:g,error}=await db.from("groups").insert({name:$("#groupName").value.trim(),created_by:user.id}).select().single();if(error)throw error;const ids=[user.id,...$$('input[name="chosen"]:checked').map(x=>x.value)];const {error:me}=await db.from("group_members").insert(ids.map(user_id=>({group_id:g.id,user_id})));if(me)throw me;$("#groupDialog").close();$("#groupForm").reset();activeGroup=g.id;toast("Grupo criado!");await loadGroups();await dashboard()}catch(e){toast(err(e),true)}}
-function realtime(){db.channel("cloud-space-"+user.id).on("postgres_changes",{event:"*",schema:"public"},()=>{dashboard();if(!$("#friends").classList.contains("hidden"))loadFriends();if(!$("#groups").classList.contains("hidden"))loadGroups()}).subscribe()}
+let realtimeChannel = null;
+
+async function realtime() {
+  if (!db || !user) return;
+
+  // Remove a inscrição anterior, se existir.
+  if (realtimeChannel) {
+    await db.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+
+  // Registra o evento ANTES de chamar subscribe().
+  realtimeChannel = db
+    .channel("cloud-space-" + user.id)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "group_members"
+      },
+      async () => {
+        await dashboard();
+
+        if (!$("#friends").classList.contains("hidden")) {
+          await loadFriends();
+        }
+
+        if (!$("#groups").classList.contains("hidden")) {
+          await loadGroups();
+        }
+      }
+    )
+    .subscribe((status) => {
+      console.log("Cloud Space Realtime:", status);
+    });
+}
 function bind(){ $("#tabLogin").onclick=()=>authMode("login");$("#tabRegister").onclick=()=>authMode("register");$("#loginForm").onsubmit=login;$("#registerForm").onsubmit=register;$("#logout").onclick=logout;$$("nav button").forEach(b=>b.onclick=()=>go(b.dataset.page));$$("[data-goto]").forEach(b=>b.onclick=()=>go(b.dataset.goto));$("#photoInput").onchange=e=>upload(e.target.files);$("#friendForm").onsubmit=sendRequest;$("#requests").onclick=e=>{const a=e.target.closest("[data-accept]"),r=e.target.closest("[data-reject]");if(a)requestAction(a.dataset.accept,true);if(r)requestAction(r.dataset.reject,false)};$("#newGroup").onclick=newGroup;$("#groupForm").onsubmit=createGroup;$("#cancelGroup").onclick=()=>$("#groupDialog").close();$("#groupsList").onclick=e=>{const b=e.target.closest("[data-group]");if(b){activeGroup=b.dataset.group;loadGroups()}};$("#copyId").onclick=async()=>{try{await navigator.clipboard.writeText($("#profileId").textContent);toast("ID copiado!")}catch{toast("Copie o ID manualmente.",true)}};$("#closeViewer").onclick=()=>$("#viewer").close()}
 document.addEventListener("DOMContentLoaded",async()=>{bind();authMode("login");if(!SUPABASE_URL.startsWith("https://")||SUPABASE_ANON_KEY.startsWith("COLE_"))return toast("Configure URL e chave anon/public no script.js.",true);db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);db.auth.onAuthStateChange((event,session)=>{if(!session){user=profile=null;$("#app").classList.add("hidden");$("#auth").classList.remove("hidden")}else if(!user){user=session.user;setTimeout(()=>restore(),0)}});try{await restore()}catch(e){toast(err(e),true)}});
