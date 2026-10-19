@@ -1185,85 +1185,152 @@ dialog form > p {
   }
 }
 
-/* =========================================
-   CELULARES
-   ========================================= */
 
+/* CELULARES — SIDEBAR À ESQUERDA */
 @media (max-width: 760px) {
   #app {
     display: block;
     min-height: 100vh;
-    padding-bottom: 72px;
+    padding-bottom: 0;
   }
 
+  /* A navegação de espaços não precisa ficar duplicada */
   .server-rail {
     display: none;
   }
 
-  aside {
+  /* Sidebar fixa à esquerda */
+  #app > aside {
     position: fixed;
     z-index: 100;
-    top: auto;
+    top: 0;
     bottom: 0;
     left: 0;
-    right: 0;
-    width: 100%;
-    height: auto;
-    min-height: 64px;
-    padding: 5px 4px;
-    border-top: 1px solid #414249;
-    border-right: 0;
-    overflow: visible;
+    width: 154px;
+    height: 100dvh;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-right: 1px solid #414249;
     background: #232428;
   }
 
-  .workspace-header,
-  .sidebar-search,
-  .sidebar-bottom,
-  .nav-caption {
+  .workspace-header {
+    height: 52px;
+    min-height: 52px;
+    padding: 0 10px;
+  }
+
+  .workspace-header .brand {
+    font-size: 16px;
+  }
+
+  .workspace-chevron,
+  .sidebar-search {
     display: none;
   }
 
   nav {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 2px;
-    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 6px;
+  }
+
+  .nav-caption {
+    display: flex;
+    margin: 16px 4px 6px;
+    font-size: 9px;
+    letter-spacing: .3px;
+  }
+
+  .nav-caption-groups {
+    margin-top: 20px;
+  }
+
+  .nav-caption-profile {
+    margin-top: 20px;
   }
 
   nav button {
-    min-width: 0;
-    min-height: 55px;
-    flex-direction: column;
-    justify-content: center;
-    gap: 3px;
-    padding: 5px 2px;
-    font-size: 10px;
-    text-align: center;
+    width: 100%;
+    min-height: 40px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px 7px;
+    font-size: 11px;
+    text-align: left;
     overflow-wrap: anywhere;
   }
 
   .nav-icon {
-    width: auto;
-    font-size: 20px;
+    width: 19px;
+    font-size: 17px;
   }
 
-  main {
-    padding: 0 14px 28px;
+  .nav-add {
+    width: 22px;
+    min-height: 22px;
+    margin-left: auto;
+    padding: 0;
+    font-size: 19px;
   }
 
-  .main-header {
-    height: 54px;
-    margin-bottom: 19px;
+  .sidebar-bottom {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    padding: 8px 6px;
   }
 
-  .breadcrumb {
+  .sidebar-account {
+    flex-wrap: wrap;
     gap: 6px;
   }
 
-  .breadcrumb-brand {
+  .sidebar-account .avatar {
+    width: 29px;
+    height: 29px;
+  }
+
+  .sidebar-account-info {
+    flex: 1 1 70px;
+  }
+
+  .sidebar-account-info strong {
     font-size: 10px;
+  }
+
+  .sidebar-account-info small {
+    font-size: 9px;
+  }
+
+  .logout {
+    padding: 5px;
+    font-size: 18px;
+  }
+
+  /* Conteúdo ao lado da sidebar */
+  #app > main {
+    width: auto;
+    min-width: 0;
+    margin-left: 154px;
+    padding: 0 12px 25px;
+  }
+
+  .main-header {
+    min-height: 54px;
+    height: auto;
+    margin-bottom: 18px;
+  }
+
+  .breadcrumb {
+    gap: 5px;
+  }
+
+  .breadcrumb-brand {
+    display: none;
   }
 
   .main-header h2 {
@@ -1271,80 +1338,89 @@ dialog form > p {
   }
 
   .header-user {
-    max-width: 40%;
+    max-width: 45%;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .welcome {
-    min-height: 190px;
-    padding: 22px;
+    min-height: 170px;
+    padding: 15px;
   }
 
   .welcome h1 {
-    font-size: 27px;
+    font-size: 23px;
+  }
+
+  .welcome p {
+    font-size: 12px;
   }
 
   .welcome-decoration {
-    right: -10px;
-    font-size: 115px;
+    right: -20px;
+    font-size: 100px;
   }
 
   .stats {
-    gap: 8px;
-    margin: 14px 0 25px;
+    grid-template-columns: 1fr;
+    gap: 7px;
+    margin: 12px 0 22px;
   }
 
   .stats article {
-    padding: 12px 10px;
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
   }
 
   .stat-icon {
     width: 30px;
     height: 30px;
-    margin-bottom: 11px;
-  }
-
-  .stats small {
-    font-size: 10px;
+    margin: 0;
   }
 
   .stats strong {
-    font-size: 23px;
+    margin: 0;
+    font-size: 21px;
   }
 
-  .gallery {
+  .stats small {
+    font-size: 11px;
+  }
+
+  .gallery,
+  #groupDetail .gallery {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 9px;
+    gap: 7px;
   }
 
   .section-head {
     align-items: flex-start;
+    gap: 8px;
+  }
+
+  .section-head h3 {
+    font-size: 15px;
+  }
+
+  .section-head p {
+    font-size: 11px;
   }
 
   .section-head > button,
   .section-head > .upload {
-    flex-shrink: 0;
-    font-size: 11px;
-    padding: 10px;
-  }
-
-  .section-head h3 {
-    font-size: 16px;
-  }
-
-  .section-head p {
-    font-size: 12px;
+    max-width: 100%;
+    padding: 9px 7px;
+    font-size: 10px;
+    white-space: normal;
   }
 
   .group-layout {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  #groupDetail .gallery {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .inline {
@@ -1356,27 +1432,73 @@ dialog form > p {
   }
 
   .profile {
-    padding-right: 17px;
-    padding-left: 17px;
+    padding-right: 12px;
+    padding-left: 12px;
   }
 
   .profile-cover {
-    margin-right: -17px;
-    margin-left: -17px;
+    margin-right: -12px;
+    margin-left: -12px;
   }
 
   .person {
     flex-wrap: wrap;
+    gap: 7px;
   }
 
   .person-info {
-    flex-basis: calc(100% - 60px);
+    flex: 1 1 80px;
   }
 
   .person button {
     margin-left: 0;
   }
 }
+
+@media (max-width: 380px) {
+  #app > aside {
+    width: 137px;
+  }
+
+  #app > main {
+    margin-left: 137px;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .workspace-header {
+    padding: 0 7px;
+  }
+
+  nav {
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  nav button {
+    gap: 5px;
+    font-size: 10px;
+  }
+
+  .nav-icon {
+    width: 17px;
+    font-size: 15px;
+  }
+
+  .welcome {
+    padding: 11px;
+  }
+
+  .welcome h1 {
+    font-size: 20px;
+  }
+
+  .gallery,
+  #groupDetail .gallery {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 @media (max-width: 380px) {
   main {
