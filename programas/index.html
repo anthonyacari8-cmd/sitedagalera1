@@ -1,18 +1,364 @@
+
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cloud Space</title><link rel="stylesheet" href="style.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script defer src="script.js"></script></head>
-<body><div id="toast"></div>
-<section id="auth" class="auth"><div class="brand">✦ Cloud Space</div><h1>Suas memórias.<br><span>Suas pessoas.</span></h1><p>Guarde fotos, encontre amigos pelo ID e compartilhe imagens em grupos.</p>
-<div class="card"><div class="tabs"><button id="tabLogin">Entrar</button><button id="tabRegister">Criar conta</button></div>
-<form id="loginForm"><h2>Bem-vindo de volta</h2><label>E-mail</label><input id="loginEmail" type="email" required placeholder="voce@email.com"><label>Senha</label><input id="loginPassword" type="password" required placeholder="Sua senha"><button class="primary">Entrar</button></form>
-<form id="registerForm" class="hidden"><h2>Crie seu espaço</h2><label>Seu nome</label><input id="registerName" required minlength="2" maxlength="40" placeholder="Como quer ser chamado?"><label>E-mail</label><input id="registerEmail" type="email" required placeholder="voce@email.com"><label>Senha (mínimo 6 caracteres)</label><input id="registerPassword" type="password" minlength="6" required placeholder="Crie uma senha"><button class="primary">Criar conta</button></form></div>
-<small>Configure as credenciais do Supabase no início de script.js.</small></section>
-<div id="app" class="hidden"><aside><div class="brand">✦ Cloud Space</div><nav><button data-page="home">⌂ Visão geral</button><button data-page="photos">▧ Minhas fotos</button><button data-page="friends">♧ Amigos</button><button data-page="groups">◉ Grupos</button><button data-page="profile">◎ Meu perfil</button></nav><button id="logout" class="logout">Sair da conta</button></aside>
-<main><header><div><small>CLOUD SPACE</small><h2 id="heading">Visão geral</h2></div><span id="topName"></span></header>
-<section id="home" class="page"><div class="welcome"><small>SEU ESPAÇO DIGITAL</small><h1>Olá, <span id="welcomeName"></span> 👋</h1><p>Guarde suas fotos e compartilhe momentos com quem importa.</p><button class="primary" data-goto="photos">Enviar fotos</button></div><div class="stats"><article><small>Minhas fotos</small><strong id="photoCount">0</strong></article><article><small>Amigos</small><strong id="friendCount">0</strong></article><article><small>Grupos</small><strong id="groupCount">0</strong></article></div><h3>Fotos recentes</h3><div id="recent" class="gallery"></div></section>
-<section id="photos" class="page hidden"><div class="section-head"><div><h3>Minha nuvem</h3><p>Suas fotos salvas na nuvem.</p></div><label class="primary upload">＋ Enviar fotos<input id="photoInput" type="file" accept="image/*" multiple hidden></label></div><div id="myPhotos" class="gallery"></div><p id="emptyPhotos" class="empty">Você ainda não enviou fotos.</p></section>
-<section id="friends" class="page hidden"><h3>Amigos</h3><p>Adicione alguém usando o ID exclusivo.</p><form id="friendForm" class="inline"><input id="friendId" required placeholder="Ex.: CS-A1B2C3"><button class="primary">Enviar pedido</button></form><h3>Pedidos recebidos</h3><div id="requests" class="list"></div><h3>Minha lista</h3><div id="friendsList" class="list"></div></section>
-<section id="groups" class="page hidden"><div class="section-head"><div><h3>Grupos de fotos</h3><p>Álbuns privados compartilhados com amigos.</p></div><button id="newGroup" class="primary">＋ Criar grupo</button></div><div class="group-layout"><div id="groupsList" class="list"></div><div id="groupDetail" class="panel empty">Escolha ou crie um grupo.</div></div></section>
-<section id="profile" class="page hidden"><h3>Meu perfil</h3><div class="profile panel"><div class="avatar" id="avatar">C</div><h2 id="profileName"></h2><p id="profileEmail"></p><div class="idbox"><small>SEU ID EXCLUSIVO</small><strong id="profileId"></strong><button id="copyId" class="secondary">Copiar ID</button></div><p>Compartilhe seu ID com amigos para que possam enviar um pedido.</p></div></section>
-</main></div>
-<dialog id="groupDialog"><form id="groupForm"><h2>Criar grupo de fotos</h2><label>Nome do grupo</label><input id="groupName" required minlength="2" maxlength="50" placeholder="Ex.: Família"><p>Escolha os amigos:</p><div id="friendChoices"></div><button class="primary">Criar grupo</button><button id="cancelGroup" type="button" class="secondary">Cancelar</button></form></dialog>
-<dialog id="viewer"><button id="closeViewer" class="secondary">Fechar</button><img id="viewerImg" alt="Foto ampliada"><p id="viewerText"></p></dialog></body></html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1e1f22">
+  <title>NEXORA — Sua comunidade</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <div id="toast"></div>
+
+  <!-- AUTENTICAÇÃO -->
+  <section id="auth" class="auth">
+    <div class="auth-brand">
+      <div class="nexora-logo">N</div>
+      <div class="brand">NEXORA</div>
+    </div>
+
+    <h1>Seu mundo.<br><span>Sua comunidade.</span></h1>
+    <p>Compartilhe momentos, encontre amigos e crie espaços para guardar suas melhores memórias.</p>
+
+    <div class="card">
+      <div class="tabs">
+        <button id="tabLogin" class="active" type="button">Entrar</button>
+        <button id="tabRegister" type="button">Criar conta</button>
+      </div>
+
+      <form id="loginForm">
+        <h2>Boas-vindas!</h2>
+        <p class="form-description">Estamos felizes em ter você de volta.</p>
+
+        <label for="loginEmail">E-mail</label>
+        <input id="loginEmail" type="email" required placeholder="voce@email.com">
+
+        <label for="loginPassword">Senha</label>
+        <input id="loginPassword" type="password" required placeholder="Sua senha">
+
+        <button class="primary" type="submit">Entrar na NEXORA</button>
+      </form>
+
+      <form id="registerForm" class="hidden">
+        <h2>Crie sua conta</h2>
+        <p class="form-description">Seu próximo espaço começa aqui.</p>
+
+        <label for="registerName">Como podemos chamar você?</label>
+        <input id="registerName" required minlength="2" maxlength="40"
+          placeholder="Seu nome">
+
+        <label for="registerEmail">E-mail</label>
+        <input id="registerEmail" type="email" required
+          placeholder="voce@email.com">
+
+        <label for="registerPassword">Senha (mínimo 6 caracteres)</label>
+        <input id="registerPassword" type="password" minlength="6" required
+          placeholder="Crie uma senha">
+
+        <button class="primary" type="submit">Criar minha conta</button>
+      </form>
+    </div>
+
+    <small>Seu espaço, suas fotos, suas pessoas.</small>
+  </section>
+
+  <!-- APLICAÇÃO -->
+  <div id="app" class="hidden">
+
+    <!-- BARRA DE ESPAÇOS -->
+    <div class="server-rail">
+      <button class="server-icon server-home" type="button"
+        title="NEXORA">N</button>
+
+      <div class="server-divider"></div>
+
+      <button class="server-icon selected" type="button"
+        title="Minha comunidade" aria-label="Minha comunidade">◈</button>
+
+      <button class="server-icon" type="button" data-goto="photos"
+        title="Galeria" aria-label="Galeria">▧</button>
+
+      <button class="server-icon" type="button" data-goto="friends"
+        title="Amigos" aria-label="Amigos">♧</button>
+
+      <button class="server-icon add-server" type="button" data-goto="groups"
+        title="Grupos" aria-label="Grupos">+</button>
+
+      <div class="rail-bottom">
+        <div class="rail-user-avatar" id="railAvatar">N</div>
+      </div>
+    </div>
+
+    <!-- NAVEGAÇÃO LATERAL -->
+    <aside>
+      <div class="workspace-header">
+        <div class="brand">NEXORA</div>
+        <span class="workspace-chevron">⌄</span>
+      </div>
+
+      <div class="sidebar-search">
+        <span>⌕</span>
+        <span>Encontre seu espaço</span>
+      </div>
+
+      <nav>
+        <div class="nav-caption">ESPAÇO PESSOAL</div>
+
+        <button data-page="home" class="active" type="button">
+          <span class="nav-icon">⌂</span>
+          Visão geral
+        </button>
+
+        <button data-page="photos" type="button">
+          <span class="nav-icon">▧</span>
+          Minhas fotos
+        </button>
+
+        <button data-page="friends" type="button">
+          <span class="nav-icon">♧</span>
+          Amigos
+        </button>
+
+        <div class="nav-caption nav-caption-groups">
+          <span>SEUS GRUPOS</span>
+          <button id="newGroup" class="nav-add" type="button"
+            title="Criar grupo" aria-label="Criar grupo">+</button>
+        </div>
+
+        <button data-page="groups" type="button">
+          <span class="nav-icon">◈</span>
+          Grupos de fotos
+        </button>
+
+        <div class="nav-caption nav-caption-profile">CONTA</div>
+
+        <button data-page="profile" type="button">
+          <span class="nav-icon">◎</span>
+          Meu perfil
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-account">
+          <div class="avatar" id="sidebarAvatar">N</div>
+          <div class="sidebar-account-info">
+            <strong id="sidebarName">Minha conta</strong>
+            <small>Minha NEXORA</small>
+          </div>
+          <button id="logout" class="logout" type="button"
+            title="Sair da conta" aria-label="Sair da conta">⇥</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main>
+      <header class="main-header">
+        <div class="breadcrumb">
+          <span class="breadcrumb-brand">NEXORA</span>
+          <span class="breadcrumb-separator">/</span>
+          <h2 id="heading">Visão geral</h2>
+        </div>
+
+        <div class="header-user">
+          <span class="status-dot"></span>
+          <span id="topName"></span>
+        </div>
+      </header>
+
+      <!-- VISÃO GERAL -->
+      <section id="home" class="page">
+        <div class="welcome">
+          <div class="welcome-content">
+            <small>SEU ESPAÇO DIGITAL</small>
+            <h1>Olá, <span id="welcomeName"></span> 👋</h1>
+            <p>Seus amigos, suas fotos e seus momentos em um só lugar.</p>
+            <button class="primary" type="button" data-goto="photos">
+              <span>＋</span> Enviar fotos
+            </button>
+          </div>
+          <div class="welcome-decoration" aria-hidden="true">✦</div>
+        </div>
+
+        <div class="section-heading">
+          <h3>Seu espaço</h3>
+          <p>Um resumo da sua comunidade.</p>
+        </div>
+
+        <div class="stats">
+          <article class="stat-card">
+            <div class="stat-icon">▧</div>
+            <small>Minhas fotos</small>
+            <strong id="photoCount">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-icon">♧</div>
+            <small>Amigos</small>
+            <strong id="friendCount">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-icon">◈</div>
+            <small>Grupos</small>
+            <strong id="groupCount">0</strong>
+          </article>
+        </div>
+
+        <div class="section-head">
+          <div>
+            <h3>Fotos recentes</h3>
+            <p>Seus últimos momentos compartilhados.</p>
+          </div>
+          <button class="secondary" type="button" data-goto="photos">
+            Ver todas
+          </button>
+        </div>
+
+        <div id="recent" class="gallery"></div>
+      </section>
+
+      <!-- FOTOS -->
+      <section id="photos" class="page hidden">
+        <div class="page-intro">
+          <div class="section-head">
+            <div>
+              <h3>Minha galeria</h3>
+              <p>Suas memórias guardadas na nuvem.</p>
+            </div>
+
+            <label class="primary upload">
+              ＋ Enviar fotos
+              <input id="photoInput" type="file" accept="image/*"
+                multiple hidden>
+            </label>
+          </div>
+        </div>
+
+        <div id="myPhotos" class="gallery"></div>
+        <p id="emptyPhotos" class="empty">
+          Sua galeria está vazia. Que tal enviar sua primeira foto?
+        </p>
+      </section>
+
+      <!-- AMIGOS -->
+      <section id="friends" class="page hidden">
+        <div class="page-intro">
+          <h3>Amigos</h3>
+          <p>Conecte-se com pessoas usando seus IDs exclusivos.</p>
+        </div>
+
+        <div class="panel friend-add-panel">
+          <h3>Adicionar amigo</h3>
+          <p>Insira o ID da pessoa que você deseja adicionar.</p>
+
+          <form id="friendForm" class="inline">
+            <input id="friendId" required placeholder="Ex.: CS-A1B2C3">
+            <button class="primary" type="submit">Enviar pedido</button>
+          </form>
+        </div>
+
+        <div class="section-heading">
+          <h3>Pedidos recebidos</h3>
+          <p>Solicitações de amizade aguardando sua resposta.</p>
+        </div>
+        <div id="requests" class="list"></div>
+
+        <div class="section-heading">
+          <h3>Minha lista</h3>
+          <p>As pessoas conectadas a você.</p>
+        </div>
+        <div id="friendsList" class="list"></div>
+      </section>
+
+      <!-- GRUPOS -->
+      <section id="groups" class="page hidden">
+        <div class="section-head">
+          <div>
+            <h3>Grupos de fotos</h3>
+            <p>Compartilhe álbuns privados com seus amigos.</p>
+          </div>
+
+          <button id="newGroupPage" class="primary" type="button"
+            data-create-group>
+            ＋ Criar grupo
+          </button>
+        </div>
+
+        <div class="group-layout">
+          <div class="group-list-panel">
+            <h3>Seus grupos</h3>
+            <div id="groupsList" class="list"></div>
+          </div>
+
+          <div id="groupDetail" class="panel empty">
+            Escolha um grupo para visualizar suas fotos.
+          </div>
+        </div>
+      </section>
+
+      <!-- PERFIL -->
+      <section id="profile" class="page hidden">
+        <div class="page-intro">
+          <h3>Meu perfil</h3>
+          <p>Suas informações e seu identificador pessoal.</p>
+        </div>
+
+        <div class="profile panel">
+          <div class="profile-cover"></div>
+          <div class="avatar profile-avatar" id="avatar">N</div>
+
+          <h2 id="profileName"></h2>
+          <p id="profileEmail"></p>
+
+          <div class="idbox">
+            <small>SEU ID EXCLUSIVO</small>
+            <strong id="profileId"></strong>
+            <button id="copyId" class="secondary" type="button">
+              Copiar ID
+            </button>
+          </div>
+
+          <p>Compartilhe seu ID com outras pessoas para receber pedidos de amizade.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL DE CRIAÇÃO DE GRUPO -->
+  <dialog id="groupDialog">
+    <form id="groupForm">
+      <h2>Criar grupo de fotos</h2>
+      <p class="muted">Dê um nome ao grupo e escolha quem poderá participar.</p>
+
+      <label for="groupName">Nome do grupo</label>
+      <input id="groupName" required minlength="2" maxlength="50"
+        placeholder="Ex.: Família">
+
+      <p>Escolha os amigos:</p>
+      <div id="friendChoices"></div>
+
+      <div class="dialog-actions">
+        <button id="cancelGroup" type="button" class="secondary">
+          Cancelar
+        </button>
+        <button class="primary" type="submit">Criar grupo</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- VISUALIZADOR DE FOTOS -->
+  <dialog id="viewer">
+    <div class="viewer-header">
+      <p id="viewerText"></p>
+      <button id="closeViewer" class="secondary" type="button">
+        Fechar
+      </button>
+    </div>
+    <img id="viewerImg" alt="Foto ampliada">
+  </dialog>
+</body>
+</html>

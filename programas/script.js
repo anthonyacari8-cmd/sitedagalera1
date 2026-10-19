@@ -13,12 +13,96 @@ function err(e){let m=e?.message||"Erro inesperado";if(/Invalid login credential
 function authMode(mode){$("#loginForm").classList.toggle("hidden",mode!=="login");$("#registerForm").classList.toggle("hidden",mode!=="register");$("#tabLogin").classList.toggle("active",mode==="login");$("#tabRegister").classList.toggle("active",mode==="register")}
 async function getProfile(id=user.id){const {data,error}=await db.from("profiles").select("*").eq("id",id).maybeSingle();if(error)throw error;return data}
 async function ensureProfile(u){let p=await getProfile(u.id);if(p)return p;for(let i=0;i<5;i++){const {data,error}=await db.from("profiles").insert({id:u.id,display_name:u.user_metadata?.display_name||u.email.split("@")[0],friend_code:newCode()}).select().single();if(!error)return data;if(!/duplicate|unique/i.test(error.message)||i===4)throw error}}
-async function showApp(p){profile=p;$("#auth").classList.add("hidden");$("#app").classList.remove("hidden");const name=p.display_name;$("#topName").textContent=name;$("#welcomeName").textContent=name.split(" ")[0];$("#profileName").textContent=name;$("#profileEmail").textContent=user.email;$("#profileId").textContent=p.friend_code;$("#avatar").textContent=initials(name);go("home");await dashboard();realtime()}
+
+async function showApp(p) {
+  profile = p;
+
+  $("#auth").classList.add("hidden");
+  $("#app").classList.remove("hidden");
+
+  const name = p.display_name || user.email.split("@")[0];
+  const avatarText = initials(name);
+
+  $("#topName").textContent = name;
+  $("#welcomeName").textContent = name.split(" ")[0];
+  $("#profileName").textContent = name;
+  $("#profileEmail").textContent = user.email;
+  $("#profileId").textContent = p.friend_code || "";
+
+  // Avatar do perfil
+  $("#avatar").textContent = avatarText;
+
+  // Dados da barra lateral
+  $("#sidebarName").textContent = name;
+  $("#sidebarAvatar").textContent = avatarText;
+  $("#railAvatar").textContent = avatarText;
+
+  go("home");
+  await dashboard();
+  await realtime();
+}
+
 async function restore(){const {data:{session}}=await db.auth.getSession();if(!session){$("#auth").classList.remove("hidden");$("#app").classList.add("hidden");return}user=session.user;try{await showApp(await ensureProfile(user))}catch(e){toast(err(e),true)}}
 async function register(e){e.preventDefault();try{const {data,error}=await db.auth.signUp({email:$("#registerEmail").value.trim(),password:$("#registerPassword").value,options:{data:{display_name:$("#registerName").value.trim()}}});if(error)throw error;if(data.session){user=data.user;await showApp(await ensureProfile(user));toast("Conta criada!")}else{authMode("login");toast("Conta criada. Confirme o e-mail recebido e entre.")}}catch(e){toast(err(e),true)}}
 async function login(e){e.preventDefault();try{const {data,error}=await db.auth.signInWithPassword({email:$("#loginEmail").value.trim(),password:$("#loginPassword").value});if(error)throw error;user=data.user;await showApp(await ensureProfile(user));toast("Login realizado!")}catch(e){toast(err(e),true)}}
-async function logout(){await db.auth.signOut();user=profile=null;$("#app").classList.add("hidden");$("#auth").classList.remove("hidden");authMode("login")}
-function go(page){$$(".page").forEach(e=>e.classList.add("hidden"));$("#"+page).classList.remove("hidden");$$("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));$("#heading").textContent=({home:"Visão geral",photos:"Minhas fotos",friends:"Amigos",groups:"Grupos",profile:"Meu perfil"})[page];if(page==="photos")loadPhotos();if(page==="friends")loadFriends();if(page==="groups")loadGroups()}
+
+async function logout() {
+  try {
+    if (realtimeChannel) {
+      await db.removeChannel(realtimeChannel);
+      realtimeChannel = null;
+    }
+
+    const { error } = await db.auth.signOut();
+    if (error) throw error;
+
+    user = null;
+    profile = null;
+    activeGroup = null;
+
+    $("#app").classList.add("hidden");
+    $("#auth").classList.remove("hidden");
+
+    authMode("login");
+    toast("Você saiu da sua conta.");
+  } catch (e) {
+    toast(err(e), true);
+  }
+}
+
+
+function go(page) {
+  const pages = ["home", "photos", "friends", "groups", "profile"];
+
+  if (!pages.includes(page)) return;
+
+  $$(".page").forEach(el => el.classList.add("hidden"));
+  $("#" + page).classList.remove("hidden");
+
+  $$("nav button[data-page]").forEach(button => {
+    button.classList.toggle("active", button.dataset.page === page);
+  });
+
+  const titles = {
+    home: "Visão geral",
+    photos: "Minhas fotos",
+    friends: "Amigos",
+    groups: "Grupos",
+    profile: "Meu perfil"
+  };
+
+  $("#heading").textContent = titles[page];
+
+  // Atualiza o botão selecionado na barra vertical
+  $$(".server-rail [data-goto]").forEach(button => {
+    button.classList.toggle("selected", button.dataset.goto === page);
+  });
+
+  if (page === "photos") loadPhotos();
+  if (page === "friends") loadFriends();
+  if (page === "groups") loadGroups();
+}
+
 async function dashboard(){try{const [p,f,g]=await Promise.all([db.from("photos").select("id",{count:"exact",head:true}).eq("owner_id",user.id).is("group_id",null),db.from("friendships").select("id",{count:"exact",head:true}).or(`user_a.eq.${user.id},user_b.eq.${user.id}`),db.from("group_members").select("group_id",{count:"exact",head:true}).eq("user_id",user.id)]);$("#photoCount").textContent=p.count||0;$("#friendCount").textContent=f.count||0;$("#groupCount").textContent=g.count||0;const {data,error}=await db.from("photos").select("*").eq("owner_id",user.id).is("group_id",null).order("created_at",{ascending:false}).limit(4);if(error)throw error;await gallery($("#recent"),data||[])}catch(e){console.error(e)}}
 async function gallery(el,photos){el.innerHTML="";for(const p of photos){const {data,error}=await db.storage.from(BUCKET).createSignedUrl(p.storage_path,3600);if(error){console.error(error);continue}const b=document.createElement("button");b.className="photo";b.innerHTML=`<img src="${esc(data.signedUrl)}" alt="${esc(p.file_name)}"><span>${esc(p.file_name)}</span>`;b.onclick=()=>{$("#viewerImg").src=data.signedUrl;$("#viewerText").textContent=p.file_name;$("#viewer").showModal()};el.append(b)}}
 async function upload(files,groupId=null){const list=[...files].filter(f=>f.type.startsWith("image/"));if(!list.length)return;if(list.some(f=>f.size>15*1024*1024))return toast("Cada imagem deve ter no máximo 15 MB.",true);toast("Enviando fotos…");let count=0;for(const f of list){try{const path=`${user.id}/${crypto.randomUUID()}-${f.name.replace(/[^\w.-]/g,"_")}`;let r=await db.storage.from(BUCKET).upload(path,f,{contentType:f.type});if(r.error)throw r.error;r=await db.from("photos").insert({owner_id:user.id,group_id:groupId,storage_path:path,file_name:f.name,mime_type:f.type,size_bytes:f.size});if(r.error){await db.storage.from(BUCKET).remove([path]);throw r.error}count++}catch(e){toast("Falha ao enviar foto: "+err(e),true)}}if(count)toast(`${count} foto(s) enviada(s)!`);if(groupId)await loadGroups();else await loadPhotos();await dashboard()}
@@ -73,5 +157,80 @@ async function realtime() {
       console.log("Cloud Space Realtime:", status);
     });
 }
-function bind(){ $("#tabLogin").onclick=()=>authMode("login");$("#tabRegister").onclick=()=>authMode("register");$("#loginForm").onsubmit=login;$("#registerForm").onsubmit=register;$("#logout").onclick=logout;$$("nav button").forEach(b=>b.onclick=()=>go(b.dataset.page));$$("[data-goto]").forEach(b=>b.onclick=()=>go(b.dataset.goto));$("#photoInput").onchange=e=>upload(e.target.files);$("#friendForm").onsubmit=sendRequest;$("#requests").onclick=e=>{const a=e.target.closest("[data-accept]"),r=e.target.closest("[data-reject]");if(a)requestAction(a.dataset.accept,true);if(r)requestAction(r.dataset.reject,false)};$("#newGroup").onclick=newGroup;$("#groupForm").onsubmit=createGroup;$("#cancelGroup").onclick=()=>$("#groupDialog").close();$("#groupsList").onclick=e=>{const b=e.target.closest("[data-group]");if(b){activeGroup=b.dataset.group;loadGroups()}};$("#copyId").onclick=async()=>{try{await navigator.clipboard.writeText($("#profileId").textContent);toast("ID copiado!")}catch{toast("Copie o ID manualmente.",true)}};$("#closeViewer").onclick=()=>$("#viewer").close()}
+
+function bind() {
+  $("#tabLogin").onclick = () => authMode("login");
+  $("#tabRegister").onclick = () => authMode("register");
+
+  $("#loginForm").onsubmit = login;
+  $("#registerForm").onsubmit = register;
+  $("#logout").onclick = logout;
+
+  // Navegação lateral
+  $$("nav button[data-page]").forEach(button => {
+    button.onclick = () => go(button.dataset.page);
+  });
+
+  // Navegação por botões com data-goto
+  $$("[data-goto]").forEach(button => {
+    button.onclick = () => go(button.dataset.goto);
+  });
+
+  // Botão principal da barra vertical
+  const homeButton = $(".server-home");
+  if (homeButton) {
+    homeButton.onclick = () => go("home");
+  }
+
+  // Upload de fotos pessoais
+  $("#photoInput").onchange = event => {
+    upload(event.target.files);
+    event.target.value = "";
+  };
+
+  // Pedidos de amizade
+  $("#friendForm").onsubmit = sendRequest;
+
+  $("#requests").onclick = event => {
+    const accept = event.target.closest("[data-accept]");
+    const reject = event.target.closest("[data-reject]");
+
+    if (accept) requestAction(accept.dataset.accept, true);
+    if (reject) requestAction(reject.dataset.reject, false);
+  };
+
+  // Criar grupo pelos dois botões
+  $("#newGroup").onclick = newGroup;
+
+  const newGroupPage = $("#newGroupPage");
+  if (newGroupPage) {
+    newGroupPage.onclick = newGroup;
+  }
+
+  $("#groupForm").onsubmit = createGroup;
+  $("#cancelGroup").onclick = () => $("#groupDialog").close();
+
+  // Abrir grupos
+  $("#groupsList").onclick = event => {
+    const button = event.target.closest("[data-group]");
+    if (!button) return;
+
+    activeGroup = button.dataset.group;
+    loadGroups();
+  };
+
+  // Copiar ID pessoal
+  $("#copyId").onclick = async () => {
+    try {
+      await navigator.clipboard.writeText($("#profileId").textContent);
+      toast("ID copiado!");
+    } catch {
+      toast("Não foi possível copiar automaticamente. Copie o ID manualmente.", true);
+    }
+  };
+
+  // Visualizador de fotos
+  $("#closeViewer").onclick = () => $("#viewer").close();
+}
+
 document.addEventListener("DOMContentLoaded",async()=>{bind();authMode("login");if(!SUPABASE_URL.startsWith("https://")||SUPABASE_ANON_KEY.startsWith("COLE_"))return toast("Configure URL e chave anon/public no script.js.",true);db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);db.auth.onAuthStateChange((event,session)=>{if(!session){user=profile=null;$("#app").classList.add("hidden");$("#auth").classList.remove("hidden")}else if(!user){user=session.user;setTimeout(()=>restore(),0)}});try{await restore()}catch(e){toast(err(e),true)}});
