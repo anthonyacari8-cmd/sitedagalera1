@@ -1,16 +1,35 @@
-CLOUD SPACE — INSTALAÇÃO
-1. Crie um projeto em https://supabase.com.
-2. No SQL Editor, execute todo o arquivo supabase.sql.
-3. Vá a Storage > New bucket, nomeie como cloud-photos e deixe PRIVATE.
-4. Em Project Settings > API, copie Project URL e anon/public key.
-5. Abra script.js e substitua as duas constantes no início:
-   SUPABASE_URL = "COLE_A_URL_DO_PROJETO"
-   SUPABASE_ANON_KEY = "COLE_A_CHAVE_ANON_PUBLICA"
-   Nunca use service_role/secret key no navegador.
-6. Em Authentication > URL Configuration, configure o endereço HTTPS do GitHub Pages em Site URL e Redirect URLs.
-7. Publique index.html, style.css e script.js no repositório GitHub Pages. O supabase.sql é executado no painel, não no site.
-8. Crie duas contas com e-mails diferentes. Confirme o e-mail se solicitado. Copie o ID em Meu perfil; use o ID na seção Amigos e aceite o pedido na outra conta.
-9. Crie um grupo e selecione os amigos para compartilhar fotos.
-10. Para realtime, habilite as tabelas friend_requests, friendships, groups, group_members e photos na publicação supabase_realtime.
+NEXORA — atualização de perfil, autoria de fotos e gestão de grupos
 
-Observações: este é um ponto de partida funcional; antes de uso público amplo, revise as políticas de segurança. O bucket deve permanecer privado. Somente HTML/CSS/JS no frontend; o Supabase fornece autenticação, banco e armazenamento.
+ARQUIVOS
+- script_patch.js: cole TODO o conteúdo no final do script.js atual.
+- html_patch.html: insira os dois blocos nos locais indicados nos comentários.
+- style_patch.css: cole no final do style.css atual.
+- supabase_migration.sql: migração de colunas e exemplo de políticas Storage.
+
+ANTES DE COMEÇAR
+1. Faça uma cópia de segurança de index.html, script.js e style.css.
+2. No Supabase, faça backup e confira as políticas RLS existentes.
+3. Execute apenas a migração SQL necessária. Se as políticas com esses nomes já
+   existirem, o CREATE POLICY retornará erro; não apague políticas sem revisá-las.
+4. Cole o patch JS no FINAL do script.js. Não substitua o arquivo inteiro.
+5. Adicione o bloco do avatar dentro do painel do perfil, logo após #avatar.
+6. Adicione o modal de edição antes do modal #viewer.
+7. Cole o CSS no final de style.css e publique novamente.
+
+O QUE MUDA
+- Upload de foto de perfil salva o caminho em profiles.avatar_path.
+- Fotos nos grupos mostram nome, avatar e data/hora do autor (photos.owner_id).
+- Criador do grupo vê Editar grupo e Excluir grupo.
+- Edição permite alterar nome e imagem do grupo (groups.avatar_path).
+- Exclusão pede confirmação e tenta apagar as fotos do grupo, participantes e grupo.
+
+ATENÇÃO ÀS POLÍTICAS
+A interface não substitui RLS. A exclusão do grupo só funcionará se as políticas
+existentes permitirem ao criador apagar as fotos, membros e o registro do grupo.
+O patch não altera automaticamente as políticas RLS de groups/photos/group_members
+para evitar reintroduzir o erro de recursão infinita em group_members.
+Se surgir erro de permissão, copie a mensagem exata e as políticas atuais para
+ajustarmos somente a regra necessária.
+
+Observação: o script atual usa BUCKET = "cloud-photos" para as fotos. O patch
+reutiliza esse bucket e não cria outro.
